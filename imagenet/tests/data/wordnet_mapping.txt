@@ -1,0 +1,5 @@
+n02512053	fish
+n02084071	dog, doggy
+n03538037	horse, ponny
+n00002452	thing
+n00002684	object, physical object
