@@ -8,6 +8,10 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', required=True,
                         help="Path to the configuration file.")
+    parser.add_argument('--output_dir', required=True,
+                        help="Path to the directory for storing results")
+    parser.add_argument('--input_file_name', required=False)
+    parser.add_argument('--output_file_name', required=False)
 
     return parser.parse_args()
 
@@ -20,14 +24,3 @@ def load_config(path):
             logging.error(exc)
 
         return None
-
-
-def load_document(document_uri):
-    try:
-        document = urlopen(document_uri).readlines()
-
-    except ValueError:
-        with open(document_uri, 'r') as f:
-            document = f.readlines()
-
-    return document

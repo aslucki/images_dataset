@@ -1,7 +1,10 @@
 IMAGE_NAME=imagenet_download
 PORT=8000
-VPATH = outputs/
-INC=config.yaml
+OUTPUT_DIR=outputs
+CONFIG_FILE=config.yaml
+
+VPATH=$(OUTPUT_DIR)
+INC=$(CONFIG_FILE)
 
 build:
 	docker build -t $(IMAGE_NAME) .
@@ -9,24 +12,15 @@ build:
 dev:
 	docker run --rm -ti -p $(PORT):$(PORT) \
 		-v $(PWD)/:/project \
-		-w '/project' $(IMAGE_NAME)
+		-w '/project' \
+		--env-file .env \
+		$(IMAGE_NAME)
 
 test:
-	export PYTHONPATH=imagenet
-	python3 -m pytest imagenet
+	export PYTHONPATH=datasets
+	pytest -v datasets
 
-
-wordnet_mapping.json:
-	python3 imagenet/create_wordnet_mapping.py --config $(config)
-
-fetched_urls.json: config.yaml wordnet_mapping.json
-	python3 imagenet/fetch_urls.py --config $(config)
-
-test.txt: dep1.txt dep2.txt
-	cat dep1.txt dep2.txt > test.txt
-
-dep2.txt: dep1.txt
-	cat dep1.txt dep1.txt > dep2.txt
-
-dep1.txt:
-	cat dep1.txt
+urls_data.json: $(CONFIG_FILE)
+	python3 datasets/fetch_urls.py \
+		--config $(CONFIG_FILE) \
+		--output_dir $(OUTPUT_DIR)

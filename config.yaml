@@ -1,10 +1,7 @@
-# IMAGENET API URLS
-# SEE: http://image-net.org/download-API
-wordnet_mapping: http://image-net.org/archive/words.txt
-available_synsets: http://www.image-net.org/api/text/imagenet.synset.obtain_synset_list
-urls_by_wnid: http://www.image-net.org/api/text/imagenet.synset.geturls
-
-classes_to_fetch:
-  - dog
-  - car
-  - truck
+classes:
+  - name: dog
+    count: 30
+  - name: car
+    count: 50
+  - name: truck
+    count: 80
