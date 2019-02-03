@@ -7,26 +7,24 @@ import random
 
 import yaml
 
+
 class Splitter:
 
-    def __init__(self, test_size, type, seed):
-        self.__test_size = self.__set_test_size(test_size, type)
+    def __init__(self, test_size, split_type, seed):
+        self.__split_type = split_type.lower()
+        self.__test_size = self.__set_test_size(test_size)
         self.__seed = seed
 
-    @staticmethod
-    def __set_test_size(test_size, type):
-        if type.lower() == 'absolute':
+    def __set_test_size(self, test_size):
+        if self.__split_type == 'absolute':
             return int(test_size)
-        elif type.lower() == 'proportional':
+        elif self.__split_type == 'proportional':
             if test_size > 1:
                 test_size /= 100
-            elif test_size > 100:
-                raise ValueError('Percentage size cannot be greater than 100')
+            elif test_size > 100 or test_size < 0:
+                raise ValueError('Percentage size must be between 0-100')
 
-            calculated_size = int(len(__file_names) * test_size)
-
-            return calculated_size
-
+            return test_size
 
     def __split_single_class(self, parent_dir_name: str, class_dir_name: str):
         file_names = os.listdir(os.path.join(parent_dir_name, class_dir_name))
@@ -34,10 +32,15 @@ class Splitter:
         random.shuffle(file_names)
         data_split = namedtuple('data_split', 'train test')
 
-        return data_split(train=file_names[self.__test_size:],
-                          test=file_names[:self.__test_size])
+        test_size = self.__test_size
+        if self.__split_type == 'proportional':
+            test_size = int(len(file_names) * test_size)
 
-    def __join_paths(self, class_dir_name, file_names):
+        return data_split(train=file_names[test_size:],
+                          test=file_names[:test_size])
+
+    @staticmethod
+    def __join_paths(class_dir_name, file_names):
         return list(map(lambda file_name:
                         os.path.join(class_dir_name, file_name),
                         file_names))
@@ -52,7 +55,8 @@ class Splitter:
             train.extend(self.__join_paths(class_dir_name, data_split.train))
             test.extend(self.__join_paths(class_dir_name, data_split.test))
 
-        return {'train': train, 'test':test}
+        return {'train': train, 'test': test}
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -60,9 +64,10 @@ def parse_arguments():
                         help="Path to the configuration file.")
     parser.add_argument('--output_dir', required=True,
                         help="Path to the directory for storing results")
-    parser.add_argument('--output_file_name', required=False)
+    parser.add_argument('--output_file_name', required=True)
 
     return parser.parse_args()
+
 
 def load_config(path):
     with open(path, 'r') as stream:
@@ -72,6 +77,7 @@ def load_config(path):
             logging.error(exc)
 
         return None
+
 
 def main():
     args = parse_arguments()
@@ -85,14 +91,12 @@ def main():
     class_dir_names = [class_info['name']
                        for class_info in config['classes']]
 
-    train_test_split = splitter.split_dataset(args.output_dir, class_dir_names)
+    train_test_split = splitter.split_dataset(args.output_dir,
+                                              class_dir_names)
 
-    file_name = 'train_test_split.json'
-    if args.output_file_name:
-        file_name = args.output_file_name
-
-    with open(os.path.join(args.output_dir, file_name), 'w') as f:
+    with open(os.path.join(args.output_dir, args.output_file_name), 'w') as f:
         json.dump(train_test_split, f)
+
 
 if __name__ == '__main__':
     main()

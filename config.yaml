@@ -14,5 +14,5 @@ train_test_split:
 
   # proportional - select n% of images from each class
   # absolute - select n images from each class
-  type: 'absolute'
-  test_size: 2
+  type: 'proportional'
+  test_size: 10

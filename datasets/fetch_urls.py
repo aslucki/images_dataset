@@ -7,6 +7,7 @@ import os
 import sys
 import time
 
+
 import flickrapi
 import yaml
 
@@ -18,9 +19,9 @@ class Fetcher:
     @staticmethod
     def __build_url(photo_info):
         try:
-           url = 'https://farm{farm}.staticflickr.com/'\
-                 '{server}/{id}_{secret}_m.jpg'.format(**photo_info)
-           return url
+            url = 'https://farm{farm}.staticflickr.com/'\
+                  '{server}/{id}_{secret}_m.jpg'.format(**photo_info)
+            return url
         except KeyError as err:
             logging.error('Key not found: {}'.format(err))
         return None
@@ -41,7 +42,6 @@ class Fetcher:
 
         return None
 
-
     def __flickrapi_search(self, name, per_page, page):
         if type(name) is str:
             name = [name]
@@ -59,7 +59,8 @@ class Fetcher:
 
         return None
 
-    def __merge_search_results(self, name, count, per_page):
+    def __fetch_class(self, name, count):
+        per_page = min(500, count)
 
         flickrapi_search_results =\
             self.__flickrapi_search(name, per_page, page=1)
@@ -73,8 +74,8 @@ class Fetcher:
             info = {'available': search_results_info.photos_count,
                     'requested': count}
             logging.warning('There are not enough resources available. '
-                             'Count: {available}, requested: {requested}.\n'
-                             'Fetching {available} url(s).'.format(**info))
+                            'Count: {available}, requested: {requested}.\n'
+                            'Fetching {available} url(s).'.format(**info))
 
         count = min(search_results_info.photos_count, count)
         pages_to_search = ceil(count / per_page)
@@ -95,12 +96,7 @@ class Fetcher:
             # Pause to not exceed API quota
             time.sleep(2)
 
-        return urls
-
-    def __fetch_class(self, name, count):
-        per_page = min(500, count)
-
-        return self. __merge_search_results(name, count, per_page)
+        return urls[:count]
 
     def fetch(self, classes: list) -> dict:
         classes_urls = {}
@@ -125,15 +121,17 @@ class Fetcher:
 
         return classes_urls
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', required=True,
                         help="Path to the configuration file.")
     parser.add_argument('--output_dir', required=True,
                         help="Path to the directory for storing results")
-    parser.add_argument('--output_file_name', required=False)
+    parser.add_argument('--output_file_name', required=True)
 
     return parser.parse_args()
+
 
 def load_config(path):
     with open(path, 'r') as stream:
@@ -143,6 +141,7 @@ def load_config(path):
             logging.error(exc)
 
         return None
+
 
 def main():
     args = parse_arguments()
@@ -155,12 +154,9 @@ def main():
     fetcher = Fetcher(flickr)
     fetched_urls = fetcher.fetch(config['classes'])
 
-    file_name = 'urls_data.json'
-    if args.output_file_name:
-        file_name = args.output_file_name
-
-    with open(os.path.join(args.output_dir, file_name), 'w') as f:
+    with open(os.path.join(args.output_dir, args.output_file_name), 'w') as f:
         json.dump(fetched_urls, f)
+
 
 if __name__ == "__main__":
     main()
