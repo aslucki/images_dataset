@@ -1,4 +1,5 @@
 IMAGE_NAME=imagenet_download
+PORT=8000
 OUTPUT_DIR=outputs
 CONFIG_FILE=config.yaml
 URLS_DATA_FILE=urls_data.json
