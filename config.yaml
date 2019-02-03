@@ -1,7 +1,18 @@
+# Define classes of images to be downloaded from flickr
+# and set count of images to download for each class.
+
 classes:
+  - name: cat
+    count: 10
   - name: dog
-    count: 30
-  - name: car
-    count: 50
-  - name: truck
-    count: 80
+    count: 5
+  - name: man
+    count: 10
+
+train_test_split:
+  seed: 42
+
+  # proportional - select n% of images from each class
+  # absolute - select n images from each class
+  type: 'absolute'
+  test_size: 2

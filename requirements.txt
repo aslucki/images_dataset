@@ -1,4 +1,4 @@
 flickrapi==2.4.0
+progressbar2==3.39.2
 pytest==4.2.0
 PyYAML==3.13
-requests==2.21.0

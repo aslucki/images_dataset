@@ -1,3 +1,4 @@
+import argparse
 from collections import namedtuple
 import json
 from math import ceil
@@ -7,30 +8,61 @@ import sys
 import time
 
 import flickrapi
-
-import utils
+import yaml
 
 
 class Fetcher:
     def __init__(self, flickrapi_object: flickrapi.FlickrAPI):
         self.__flickrapi_object = flickrapi_object
 
-    def __fetch_class(self, name, count):
-        per_page = min(500, count)
+    @staticmethod
+    def __build_url(photo_info):
+        try:
+           url = 'https://farm{farm}.staticflickr.com/'\
+                 '{server}/{id}_{secret}_m.jpg'.format(**photo_info)
+           return url
+        except KeyError as err:
+            logging.error('Key not found: {}'.format(err))
+        return None
 
+    @staticmethod
+    def __get_results_info(flickrapi_search_results):
+        search_results_info =\
+            namedtuple('search_results_info', 'pages_count photos_count')
+
+        try:
+            pages_count = flickrapi_search_results['photos']['pages']
+            photos_count =\
+                pages_count * flickrapi_search_results['photos']['perpage']
+            return search_results_info(pages_count=pages_count,
+                                       photos_count=photos_count)
+        except KeyError as err:
+            logging.error('Key not found: {}'.format(err))
+
+        return None
+
+
+    def __flickrapi_search(self, name, per_page, page):
         if type(name) is str:
             name = [name]
+        return self.__flickrapi_object.photos.search(tags=name,
+                                                     per_page=str(per_page),
+                                                     page=page)
 
-        return self. __merge_search_results(name, count, per_page)
+    def __search_results_to_urls(self, flickrapi_search_results: dict)\
+            -> list:
+        try:
+            return list(map(lambda x: self.__build_url(x),
+                            flickrapi_search_results['photos']['photo']))
+        except KeyError as err:
+            logging.error(err)
 
+        return None
 
     def __merge_search_results(self, name, count, per_page):
 
         flickrapi_search_results =\
-            self.__flickrapi_object.photos.search(tags=name,
-                                                  per_page=str(per_page),
-                                                  license=1,
-                                                  page=1)
+            self.__flickrapi_search(name, per_page, page=1)
 
         search_results_info = self.__get_results_info(flickrapi_search_results)
         if not search_results_info:
@@ -53,14 +85,11 @@ class Fetcher:
         if pages_to_search == 1:
             return urls[:count]
 
-        # Iterate through next avaialble pages
+        # Iterate through next available pages
         # if the first page is not enough
         for page in range(2, pages_to_search+1):
             flickrapi_search_results = \
-                self.__flickrapi_object.photos.search(tags=name,
-                                                      per_page=str(per_page),
-                                                      license=1,
-                                                      page=page)
+                self.__flickrapi_search(name, per_page, page=page)
             urls.extend(self.__search_results_to_urls(flickrapi_search_results))
 
             # Pause to not exceed API quota
@@ -68,44 +97,10 @@ class Fetcher:
 
         return urls
 
+    def __fetch_class(self, name, count):
+        per_page = min(500, count)
 
-    def __search_results_to_urls(self, flickrapi_search_results: dict)\
-            -> list:
-        try:
-            return list(map(lambda x: self.__build_url(x),
-                            flickrapi_search_results['photos']['photo']))
-        except KeyError as err:
-            logging.error(err)
-
-        return None
-
-
-    @staticmethod
-    def __get_results_info(flickrapi_search_results):
-        search_results_info =\
-            namedtuple('search_results_info', 'pages_count photos_count')
-
-        try:
-            pages_count = flickrapi_search_results['photos']['pages']
-            photos_count =\
-                pages_count * flickrapi_search_results['photos']['perpage']
-            return search_results_info(pages_count=pages_count,
-                                       photos_count=photos_count)
-        except KeyError as err:
-            logging.error('Key not found: {}'.format(err))
-
-        return None
-
-    @staticmethod
-    def __build_url(photo_info):
-        try:
-           url = 'https://farm{farm}.staticflickr.com/'\
-                 '{server}/{id}_{secret}_m.jpg'.format(**photo_info)
-           return url
-        except KeyError as err:
-            logging.error('Key not found: {}'.format(err))
-        return None
-
+        return self. __merge_search_results(name, count, per_page)
 
     def fetch(self, classes: list) -> dict:
         classes_urls = {}
@@ -130,10 +125,28 @@ class Fetcher:
 
         return classes_urls
 
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', required=True,
+                        help="Path to the configuration file.")
+    parser.add_argument('--output_dir', required=True,
+                        help="Path to the directory for storing results")
+    parser.add_argument('--output_file_name', required=False)
+
+    return parser.parse_args()
+
+def load_config(path):
+    with open(path, 'r') as stream:
+        try:
+            return yaml.load(stream)
+        except yaml.YAMLError as exc:
+            logging.error(exc)
+
+        return None
 
 def main():
-    args = utils.parse_arguments()
-    config = utils.load_config(args.config)
+    args = parse_arguments()
+    config = load_config(args.config)
     logging.basicConfig(level=logging.INFO)
 
     flickr = flickrapi.FlickrAPI(os.environ.get('API_KEY'),
