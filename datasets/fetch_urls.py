@@ -7,9 +7,21 @@ import os
 import sys
 import time
 
-
 import flickrapi
+from tqdm import tqdm
 import yaml
+
+
+def retry(count: int):
+    def retry_decorator(func):
+        def func_wrapper(*args, **kwargs):
+            for _ in range(count):
+                result = func(*args, **kwargs)
+                if result:
+                    return result
+                time.sleep(2)
+        return func_wrapper
+    return retry_decorator
 
 
 class Fetcher:
@@ -42,12 +54,17 @@ class Fetcher:
 
         return None
 
+    @retry(5)
     def __flickrapi_search(self, name, per_page, page):
         if type(name) is str:
             name = [name]
-        return self.__flickrapi_object.photos.search(tags=name,
-                                                     per_page=str(per_page),
-                                                     page=page)
+        try:
+            return self.__flickrapi_object.photos\
+                .search(tags=name, per_page=str(per_page), page=page)
+        except flickrapi.exceptions.FlickrError as err:
+            logging.error(err)
+
+        return None
 
     def __search_results_to_urls(self, flickrapi_search_results: dict)\
             -> list:
@@ -88,7 +105,7 @@ class Fetcher:
 
         # Iterate through next available pages
         # if the first page is not enough
-        for page in range(2, pages_to_search+1):
+        for page in tqdm(range(2, pages_to_search+2)):
             flickrapi_search_results = \
                 self.__flickrapi_search(name, per_page, page=page)
             urls.extend(self.__search_results_to_urls(flickrapi_search_results))
@@ -108,15 +125,15 @@ class Fetcher:
                 classes_urls[class_name] =\
                     self.__fetch_class(class_name, class_count)
 
-                logging.info('Fetched {} urls for the {} class'
-                             .format(len(classes_urls[class_name]),
-                                     class_name))
+                logging.warning('Fetched {} urls for the {} class'
+                                .format(len(classes_urls[class_name]),
+                                        class_name))
         except KeyError as err:
             logging.error(err)
         except TypeError as err:
             logging.error(err)
         except KeyboardInterrupt:
-            logging.info('Stopped by user')
+            logging.warning('Stopped by user')
             sys.exit()
 
         return classes_urls
@@ -146,7 +163,7 @@ def load_config(path):
 def main():
     args = parse_arguments()
     config = load_config(args.config)
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.WARNING)
 
     flickr = flickrapi.FlickrAPI(os.environ.get('API_KEY'),
                                  os.environ.get('API_SECRET'),
