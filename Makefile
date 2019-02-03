@@ -23,8 +23,11 @@ dev:
 test:
 	python3 -m pytest -v datasets
 
+delete_outputs:
+	@rm -rf outputs/*
+
 create_dataset: dataset.tgz
-	@echo "Dataset created\033[0m" 
+	@echo "Dataset created" 
 
 urls_data.json: $(CONFIG_FILE)
 	@mkdir -p $(OUTPUT_DIR)
@@ -46,7 +49,7 @@ train_test_split.json: $(CONFIG_FILE) summary.txt
 		--output_file_name $(SPLIT_INFO_FILE)	
 
 dataset.tgz: train_test_split.json
-	rm -f dataset.tgz~
+	@rm -f dataset.tgz~
 	@cd $(OUTPUT_DIR); \
 	tar czf dataset.tgz \
 		--exclude=$(URLS_DATA_FILE) \
