@@ -3,16 +3,31 @@
 
 classes:
   - name: cat
-    count: 10
+    count: 20000
   - name: dog
-    count: 5
-  - name: man
-    count: 10
+    count: 10000
+  - name: frog
+    count: 10000
+  - name: bird
+    count: 10000
+  - name: flower
+    count: 5000
+  - name: tree
+    count: 5000
+  - name: mushroom
+    count: 5000
+  - name: sportscar
+    count: 10000
+  - name: boat
+    count: 10000
+  - name: jumbojet
+    count: 5000
+
 
 train_test_split:
   seed: 42
 
   # proportional - select n% of images from each class
   # absolute - select n images from each class
-  type: 'proportional'
-  test_size: 10
+  type: 'absolute'
+  test_size: 500
