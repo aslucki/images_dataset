@@ -42,7 +42,7 @@ summary.txt: urls_data.json
 		--output_dir $(OUTPUT_DIR) \
 		--output_file_name $(DOWNLOAD_REPORT_FILE)
 
-train_test_split.json: $(CONFIG_FILE) summary.txt
+train_test_split.json: summary.txt
 	@python3 datasets/split_dataset.py \
 		--config $(CONFIG_FILE) \
 		--output_dir $(OUTPUT_DIR) \

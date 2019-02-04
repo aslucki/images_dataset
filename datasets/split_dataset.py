@@ -79,6 +79,23 @@ def load_config(path):
         return None
 
 
+def get_classes_names(output_dir, config):
+    class_dir_names = next(os.walk(output_dir))[1]
+    if type(class_dir_names) is not list:
+        class_dir_names = [class_dir_names]
+    class_config_names = [entry['name'] for entry in config['classes']]
+
+    difference = set(class_dir_names).\
+        symmetric_difference(class_config_names)
+    if len(difference) != 0:
+        logging.warning('There is a mismatch between '
+                        'subdirectories names and '
+                        'classes defined in the config:\n'
+                        .format(difference))
+
+    return class_dir_names
+
+
 def main():
     args = parse_arguments()
     config = load_config(args.config)
@@ -88,14 +105,13 @@ def main():
                         config['train_test_split']['type'],
                         config['train_test_split']['seed'])
 
-    class_dir_names = [class_info['name']
-                       for class_info in config['classes']]
+    class_dir_names = get_classes_names(args.output_dir, config)
 
     train_test_split = splitter.split_dataset(args.output_dir,
                                               class_dir_names)
 
     with open(os.path.join(args.output_dir, args.output_file_name), 'w') as f:
-        json.dump(train_test_split, f)
+        json.dump(train_test_split, f, indent=4)
 
 
 if __name__ == '__main__':

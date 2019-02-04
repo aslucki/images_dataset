@@ -70,7 +70,7 @@ images (240px on the longest side) with class instances.
 2. `train_test_split.json` file containing relative paths to the images
 divided into `training` and `testing` set.
 3. `dataset.tgz` archive containing the above (1, 2).
-4. `urls_data.json` urs to images on Flickr.
+4. `urls_data.json` urls to images on Flickr.
 5. `summary.txt` report from the downloading process. At the same time it summarizes 
 the contents of the dataset.
 
