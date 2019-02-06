@@ -31,3 +31,13 @@ train_test_split:
   # absolute - select n images from each class
   type: 'absolute'
   test_size: 500
+
+
+subset:
+  # smaller dataset that can be used when
+  # GPU is unavailable
+
+  seed: 42
+
+  # Percentage of the full dataset
+  percentage: 20

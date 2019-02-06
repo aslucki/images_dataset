@@ -1,9 +1,10 @@
-IMAGE_NAME=imagenet_download
+IMAGE_NAME=datasets_download
 PORT=8000
 OUTPUT_DIR=outputs
 CONFIG_FILE=config.yaml
 URLS_DATA_FILE=urls_data.json
-SPLIT_INFO_FILE=train_test_split.json
+SPLIT_INFO_FILE=train_test_split_gpu.json
+SPLIT_SUBSET_FILE=train_test_split_cpu.json
 DOWNLOAD_REPORT_FILE=summary.txt
 
 VPATH=$(OUTPUT_DIR)
@@ -42,13 +43,20 @@ summary.txt: urls_data.json
 		--output_dir $(OUTPUT_DIR) \
 		--output_file_name $(DOWNLOAD_REPORT_FILE)
 
-train_test_split.json: summary.txt
+train_test_split_gpu.json: summary.txt
 	@python3 datasets/split_dataset.py \
 		--config $(CONFIG_FILE) \
 		--output_dir $(OUTPUT_DIR) \
-		--output_file_name $(SPLIT_INFO_FILE)	
+		--output_file_name $(SPLIT_INFO_FILE)
 
-dataset.tgz: train_test_split.json
+train_test_split_cpu.json: train_test_split_gpu.json
+	@python3 datasets/extract_subset.py \
+		--config $(CONFIG_FILE) \
+		--input_file_name $(SPLIT_INFO_FILE) \
+		--output_dir $(OUTPUT_DIR) \
+		--output_file_name $(SPLIT_SUBSET_FILE)
+
+dataset.tgz: train_test_split_gpu.json
 	@rm -f dataset.tgz~
 	@cd $(OUTPUT_DIR); \
 	tar czf dataset.tgz \
