@@ -56,7 +56,7 @@ train_test_split_cpu.json: train_test_split_gpu.json
 		--output_dir $(OUTPUT_DIR) \
 		--output_file_name $(SPLIT_SUBSET_FILE)
 
-dataset.tgz: train_test_split_gpu.json
+dataset.tgz: train_test_split_cpu.json train_test_split_gpu.json
 	@rm -f dataset.tgz~
 	@cd $(OUTPUT_DIR); \
 	tar czf dataset.tgz \
